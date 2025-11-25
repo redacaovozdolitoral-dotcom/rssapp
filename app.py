@@ -5,7 +5,7 @@ import os
 
 app = Flask(__name__)
 
-GNEWS_KEY = "SUA_API_KEY_AQUI"  # Cole sua API Key do GNews.io aqui!
+GNEWS_KEY = "d9f2349f23a0845fe466b2a959376e2f"  # Cole sua API Key do GNews.io aqui!
 
 def fetch_gnews_items(keyword):
     url = f'https://gnews.io/api/v4/search?q={keyword}&lang=pt&country=br&max=10&apikey={GNEWS_KEY}'
@@ -48,3 +48,4 @@ def feed_gnews(keyword):
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
+
