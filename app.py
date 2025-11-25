@@ -15,12 +15,14 @@ def fetch_news_items(keyword):
     items = soup.findAll('item')
 
     news = []
-    agora = datetime.datetime.utcnow()
+    agora = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
 
     for item in items:
         pub_date_text = item.pubDate.text if item.pubDate else None
         if pub_date_text:
-            pub_date = parser.parse(pub_date_text).replace(tzinfo=None)
+            pub_date = parser.parse(pub_date_text)
+            if not pub_date.tzinfo:
+                pub_date = pub_date.replace(tzinfo=datetime.timezone.utc)
             diff = agora - pub_date
             if diff.total_seconds() > 86400:
                 continue
@@ -28,19 +30,17 @@ def fetch_news_items(keyword):
         description = item.description.text if item.description else None
         link = item.link.text if item.link else None
 
-        # Tenta buscar imagem em <enclosure>
         enclosure = item.find('enclosure')
         image = enclosure['url'] if enclosure and enclosure.has_attr('url') else None
 
-        # Garante que tenha pelo menos título e descrição
         if title and description:
             news.append({
                 'title': title,
                 'image': image,
                 'description': description,
-                'link': link
+                'link': link,
+                'pub_date': pub_date_text or agora.isoformat()
             })
-
         if len(news) >= 10:
             break
     return news
@@ -58,11 +58,9 @@ def feed(keyword):
         fe.title(data['title'])
         fe.link(href=data['link'])
         fe.description(data['description'])
-        # Adiciona imagem no enclosure, se existir
         if data["image"]:
-            # Usa tipo padrão de imagem JPEG para compatibilidade
             fe.enclosure(url=data["image"], type="image/jpeg", length=0)
-        fe.pubDate(datetime.datetime.utcnow())
+        fe.pubDate(data['pub_date'])
 
     rssfeed = fg.rss_str(pretty=True)
     return Response(rssfeed, mimetype='application/rss+xml')
