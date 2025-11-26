@@ -2,4 +2,4 @@ Flask
 feedgen
 feedparser
 newspaper3k
-
+gunicorn
