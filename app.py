@@ -2,12 +2,11 @@ import feedparser
 from newspaper import Article
 from feedgen.feed import FeedGenerator
 from flask import Flask, Response
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 app = Flask(__name__)
 
-def scrape_news_from_google():
-    keyword = "litoral+norte+de+sao+paulo"
+def scrape_news_from_google(keyword):
     rss_url = f'https://news.google.com/rss/search?q={keyword}&hl=pt-BR&gl=BR&ceid=BR:pt-419'
     parsed_feed = feedparser.parse(rss_url)
     news_list = []
@@ -17,7 +16,7 @@ def scrape_news_from_google():
         if pub_date:
             entry_time = datetime(*pub_date[:6], tzinfo=timezone.utc)
             if (now - entry_time).total_seconds() > 86400:
-                continue  # só notícias das últimas 24h
+                continue  # Só notícias das últimas 24h
         url = entry.get('link')
         try:
             article = Article(url, language='pt')
@@ -26,6 +25,9 @@ def scrape_news_from_google():
             title = article.title or entry.get('title')
             lead = article.text[:300] + "..." if article.text else entry.get('summary')
             image = article.top_image if article.top_image else None
+            # Filtro para não pegar logo do Google News
+            if image and "news.google.com" in image:
+                image = None
             news_list.append({
                 'title': title,
                 'description': lead,
@@ -35,17 +37,17 @@ def scrape_news_from_google():
             })
             if len(news_list) >= 10:
                 break
-        except Exception as e:
+        except Exception:
             continue  # ignora erros de scraping
     return news_list
 
-@app.route('/feed/google_scrape/litoral+norte+de+sao+paulo')
-def custom_feed():
-    news_items = scrape_news_from_google()
+@app.route('/feed/google_scrape/<keyword>')
+def custom_feed(keyword):
+    news_items = scrape_news_from_google(keyword)
     fg = FeedGenerator()
-    fg.title('Google News Scrape: litoral norte de são paulo')
-    fg.link(href='https://rssapp-8wwg.onrender.com/feed/google_scrape/litoral+norte+de+sao+paulo', rel='self')
-    fg.description('Notícias filtradas e raspadas do Google sobre litoral norte de São Paulo (últimas 24h)')
+    fg.title(f'Google News Scrape: {keyword}')
+    fg.link(href=f'https://rssapp-8wwg.onrender.com/feed/google_scrape/{keyword}', rel='self')
+    fg.description(f'Notícias raspadas do Google News sobre {keyword} (últimas 24h)')
     for data in news_items:
         fe = fg.add_entry()
         fe.title(data['title'])
