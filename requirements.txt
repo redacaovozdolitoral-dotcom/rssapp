@@ -1,6 +1,5 @@
 Flask
-requests
-beautifulsoup4
 feedgen
-python-dateutil
-gunicorn
+feedparser
+newspaper3k
+
