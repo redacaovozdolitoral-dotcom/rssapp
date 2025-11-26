@@ -3,4 +3,5 @@ feedgen
 feedparser
 newspaper3k
 gunicorn
-lxml[html_clean]
+lxml
+lxml_html_clean
